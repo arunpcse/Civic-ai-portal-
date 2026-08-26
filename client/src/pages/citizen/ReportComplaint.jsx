@@ -12,6 +12,7 @@ import {
   CheckCircle,
   RefreshCw,
   AlertCircle,
+  AlertTriangle,
   Sparkles,
   ArrowRight,
   Layers,
