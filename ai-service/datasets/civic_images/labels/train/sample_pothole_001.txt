@@ -1,0 +1,17 @@
+# Sample YOLO annotation for a pothole image
+# File: datasets/civic_images/labels/train/sample_pothole_001.txt
+#
+# Format: <class_id> <x_center> <y_center> <width> <height>
+# All values are normalised (0.0 – 1.0) relative to image dimensions.
+#
+# Class index map:
+#   0 → pothole
+#   1 → garbage
+#   2 → water_leakage
+#   3 → drainage
+#   4 → road_damage
+#
+# Example bounding box: pothole centred at (45%, 60%) of the image,
+# occupying 30% width and 20% height:
+
+0 0.45 0.60 0.30 0.20

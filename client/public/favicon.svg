@@ -1,0 +1,88 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="100%" height="100%">
+  <!-- Outer Dark Green Ring -->
+  <circle cx="100" cy="100" r="96" fill="#0b5e28" stroke="#f59e0b" stroke-width="3" />
+  
+  <!-- Outer Decorative Beaded Border -->
+  <circle cx="100" cy="100" r="92" fill="none" stroke="#ffffff" stroke-width="1.5" stroke-dasharray="2 3" opacity="0.8" />
+  
+  <!-- Inner White Field -->
+  <circle cx="100" cy="100" r="74" fill="#ffffff" stroke="#0b5e28" stroke-width="2.5" />
+  
+  <!-- Curved Text Path for "தமிழ்நாடு அரசு" (Top) -->
+  <path id="topTextPath" d="M 28 100 A 72 72 0 0 1 172 100" fill="none" />
+  <text font-family="'Noto Sans Tamil', 'Inter', sans-serif" font-size="12.5" font-weight="900" fill="#ffffff" letter-spacing="1.2">
+    <textPath href="#topTextPath" startOffset="50%" text-anchor="middle">தமிழ்நாடு அரசு</textPath>
+  </text>
+  
+  <!-- Curved Text Path for "GOVERNMENT OF TAMIL NADU" (Bottom) -->
+  <path id="bottomTextPath" d="M 172 100 A 72 72 0 0 1 28 100" fill="none" />
+  <text font-family="'Inter', 'Plus Jakarta Sans', sans-serif" font-size="9.5" font-weight="800" fill="#ffffff" letter-spacing="1">
+    <textPath href="#bottomTextPath" startOffset="50%" text-anchor="middle">GOVERNMENT OF TAMIL NADU</textPath>
+  </text>
+
+  <!-- Side Star Embellishments -->
+  <circle cx="23" cy="100" r="2.5" fill="#f59e0b" />
+  <circle cx="177" cy="100" r="2.5" fill="#f59e0b" />
+
+  <!-- Inner Gopuram (Temple Tower) Base Sun Rays / Glory -->
+  <circle cx="100" cy="100" r="68" fill="#fef9c3" opacity="0.4" />
+  
+  <!-- Srivilliputhur Temple Gopuram (Golden Temple Tower) -->
+  <g transform="translate(100, 95) scale(0.68) translate(-100, -100)">
+    <!-- Base Platform -->
+    <rect x="40" y="148" width="120" height="12" rx="2" fill="#d97706" stroke="#78350f" stroke-width="1.5" />
+    <rect x="48" y="138" width="104" height="10" rx="1.5" fill="#f59e0b" stroke="#78350f" stroke-width="1.5" />
+    
+    <!-- Tier 1 -->
+    <polygon points="52,138 148,138 142,120 58,120" fill="#f59e0b" stroke="#78350f" stroke-width="1.5" />
+    <!-- Tier 2 -->
+    <polygon points="56,120 144,120 139,102 61,102" fill="#fbbf24" stroke="#78350f" stroke-width="1.5" />
+    <!-- Tier 3 -->
+    <polygon points="60,102 140,102 135,84 65,84" fill="#f59e0b" stroke="#78350f" stroke-width="1.5" />
+    <!-- Tier 4 -->
+    <polygon points="64,84 136,84 131,66 69,66" fill="#fbbf24" stroke="#78350f" stroke-width="1.5" />
+    <!-- Tier 5 -->
+    <polygon points="68,66 132,66 128,48 72,48" fill="#f59e0b" stroke="#78350f" stroke-width="1.5" />
+    <!-- Tier 6 (Top Dome) -->
+    <path d="M 72 48 Q 100 32 128 48 Z" fill="#d97706" stroke="#78350f" stroke-width="1.5" />
+    
+    <!-- Kalasams (Finials on Top) -->
+    <path d="M 82 38 L 84 32 L 86 38 Z M 92 35 L 94 28 L 96 35 Z M 98 34 L 100 24 L 102 34 Z M 104 35 L 106 28 L 108 35 Z M 114 38 L 116 32 L 118 38 Z" fill="#b45309" stroke="#78350f" stroke-width="1" />
+    
+    <!-- Vertical Tower Details / Niches -->
+    <line x1="100" y1="48" x2="100" y2="138" stroke="#78350f" stroke-width="2" stroke-dasharray="4 3" />
+    <line x1="84" y1="66" x2="84" y2="138" stroke="#78350f" stroke-width="1.2" stroke-dasharray="3 3" />
+    <line x1="116" y1="66" x2="116" y2="138" stroke="#78350f" stroke-width="1.2" stroke-dasharray="3 3" />
+
+    <!-- Indian National Tricolour flags on sides -->
+    <!-- Left Flag -->
+    <path d="M 44 148 L 44 110 L 28 116 L 44 122" fill="#ea580c" stroke="#78350f" stroke-width="1" />
+    <line x1="44" y1="148" x2="44" y2="105" stroke="#475569" stroke-width="2.5" />
+    <!-- Right Flag -->
+    <path d="M 156 148 L 156 110 L 172 116 L 156 122" fill="#16a34a" stroke="#78350f" stroke-width="1" />
+    <line x1="156" y1="148" x2="156" y2="105" stroke="#475569" stroke-width="2.5" />
+
+    <!-- Lion Capital of Ashoka (National Emblem) at Center Bottom -->
+    <g transform="translate(100, 136) scale(0.72) translate(-100, -100)">
+      <!-- Red Shield / Oval Behind Lions -->
+      <ellipse cx="100" cy="100" rx="28" ry="24" fill="#dc2626" stroke="#991b1b" stroke-width="1.5" />
+      <!-- Ashoka 3 Lions representation in Gold -->
+      <!-- Center Lion -->
+      <circle cx="100" cy="90" r="8" fill="#fef08a" stroke="#854d0e" stroke-width="1" />
+      <path d="M 94 94 C 94 104 106 104 106 94 Z" fill="#fef08a" stroke="#854d0e" stroke-width="1" />
+      <!-- Left Lion -->
+      <circle cx="86" cy="93" r="6" fill="#fef08a" stroke="#854d0e" stroke-width="1" />
+      <path d="M 82 96 C 82 102 92 102 92 96 Z" fill="#fef08a" stroke="#854d0e" stroke-width="1" />
+      <!-- Right Lion -->
+      <circle cx="114" cy="93" r="6" fill="#fef08a" stroke="#854d0e" stroke-width="1" />
+      <path d="M 108 96 C 108 102 118 102 118 96 Z" fill="#fef08a" stroke="#854d0e" stroke-width="1" />
+      <!-- Ashoka Chakra Wheel Base -->
+      <rect x="80" y="106" width="40" height="7" rx="1.5" fill="#fef08a" stroke="#854d0e" stroke-width="1" />
+      <circle cx="100" cy="109.5" r="3" fill="#1e3a8a" />
+    </g>
+
+    <!-- Motto Banner "வாய்மையே வெல்லும்" at Bottom Base -->
+    <rect x="42" y="162" width="116" height="14" rx="3" fill="#ffffff" stroke="#0b5e28" stroke-width="1.5" />
+    <text x="100" y="173" font-family="'Noto Sans Tamil', sans-serif" font-size="8.5" font-weight="900" fill="#0b5e28" text-anchor="middle" letter-spacing="0.5">வாய்மையே வெல்லும்</text>
+  </g>
+</svg>
