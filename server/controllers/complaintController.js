@@ -17,7 +17,8 @@ const resolveImageUrl = (rawPath) => {
   if (rawPath.startsWith("http://") || rawPath.startsWith("https://")) return rawPath;
   // Local file path stored by multer — strip to filename and serve via /uploads
   const filename = rawPath.replace(/\\/g, "/").split("/").pop();
-  return `http://localhost:5000/uploads/${filename}`;
+  const baseUrl = process.env.BASE_URL || `http://localhost:${process.env.PORT || 5000}`;
+  return `${baseUrl}/uploads/${filename}`;
 };
 
 // @desc    Create a new civic complaint (Citizen) with automatic AI verification & deduplication

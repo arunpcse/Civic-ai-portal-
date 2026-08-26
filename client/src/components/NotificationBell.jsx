@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import axios from "axios";
+import API from "../services/api";
 
 // Derives notifications from the citizen's own complaints state changes
 export default function NotificationBell() {
@@ -10,11 +10,8 @@ export default function NotificationBell() {
   useEffect(() => {
     const fetchNotifications = async () => {
       try {
-        const config = {
-          headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
-        };
-        // Derive notifications from complaint status changes
-        const res = await axios.get("http://localhost:5000/api/complaints/my", config);
+        // Derive notifications from complaint status changes using configured API instance
+        const res = await API.get("/complaints/my");
         if (res.data.success) {
           const complaints = res.data.complaints || [];
           const notifs = [];

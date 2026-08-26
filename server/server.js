@@ -20,7 +20,15 @@ console.log("MONGO_URI loaded:", !!process.env.MONGO_URI);
 
 const app = express();
 
-app.use(cors());
+// Enable CORS for all origins and headers (needed for Vercel -> Render cross-origin calls)
+app.use(
+  cors({
+    origin: "*",
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"],
+  })
+);
+
 app.use(express.json());
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
@@ -34,6 +42,10 @@ app.use("/api/analytics", analyticsRoutes);
 app.use("/api/locations", locationRoutes);
 
 connectDB();
+
+app.get("/health", (req, res) => {
+  res.status(200).json({ status: "ok", timestamp: new Date().toISOString() });
+});
 
 app.get("/", (req, res) => {
   res.json({
@@ -53,6 +65,6 @@ app.get("/", (req, res) => {
 
 const PORT = process.env.PORT || 5000;
 
-app.listen(PORT, () => {
+app.listen(PORT, "0.0.0.0", () => {
   console.log(`Server running on port ${PORT}`);
 });

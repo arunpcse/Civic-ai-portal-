@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import API from "../../services/api";
+import API, { formatImageUrl } from "../../services/api";
 import DashboardLayout from "../../layouts/DashboardLayout";
 import { useLanguage } from "../../context/LanguageContext";
 import { useParams, Link } from "react-router-dom";
@@ -40,13 +40,6 @@ function MapRecenterController({ center }) {
   }, [center, map]);
   return null;
 }
-
-const formatImageUrl = (url) => {
-  if (!url) return "https://images.unsplash.com/photo-1515162816999-a0c47dc192f7?w=800&q=80";
-  if (url.startsWith("http://") || url.startsWith("https://")) return url;
-  const filename = url.split(/[\\/]/).pop();
-  return `http://localhost:5000/uploads/${filename}`;
-};
 
 export default function ComplaintDetail() {
   const { id } = useParams();

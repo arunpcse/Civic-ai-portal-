@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useContext } from "react";
 import { AuthContext } from "../../context/AuthContext";
-import API from "../../services/api";
+import API, { formatImageUrl } from "../../services/api";
 import DashboardLayout from "../../layouts/DashboardLayout";
 import { Link } from "react-router-dom";
 import {
@@ -20,14 +20,6 @@ import {
   ArrowRight,
   MapPin,
 } from "lucide-react";
-
-// Normalise image paths stored as local file paths to public HTTP URLs
-const formatImageUrl = (url) => {
-  if (!url) return "";
-  if (url.startsWith("http://") || url.startsWith("https://")) return url;
-  const filename = url.replace(/\\/g, "/").split("/").pop();
-  return `http://localhost:5000/uploads/${filename}`;
-};
 
 export default function DepartmentDashboard() {
   const { currentUser } = useContext(AuthContext);
