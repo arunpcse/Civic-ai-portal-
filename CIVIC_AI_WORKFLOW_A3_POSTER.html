@@ -1,0 +1,797 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CivicAI – End-to-End System Workflow Architecture (A3 Poster)</title>
+  <style>
+    /* ─── A3 Landscape Print Configuration ─── */
+    @page {
+      size: A3 landscape;
+      margin: 8mm;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-print-color-adjust: exact !important;
+      print-color-adjust: exact !important;
+    }
+
+    body {
+      font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, Helvetica, Arial, sans-serif;
+      background-color: #0b1120;
+      color: #f8fafc;
+      width: 404mm; /* A3 landscape printable inner width (420mm - 16mm margins) */
+      min-height: 281mm; /* A3 landscape printable inner height (297mm - 16mm margins) */
+      margin: 0 auto;
+      padding: 10px 14px;
+      line-height: 1.25;
+      font-size: 11px;
+    }
+
+    /* ─── Top Header Banner ─── */
+    .header-banner {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+      border: 1.5px solid #38bdf8;
+      border-radius: 10px;
+      padding: 10px 20px;
+      margin-bottom: 10px;
+      box-shadow: 0 4px 20px rgba(56, 189, 248, 0.15);
+    }
+
+    .header-title-box {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .gov-badge {
+      background: #0284c7;
+      color: #ffffff;
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      border: 1px solid #7dd3fc;
+    }
+
+    .main-title {
+      font-size: 20px;
+      font-weight: 900;
+      letter-spacing: -0.5px;
+      background: linear-gradient(to right, #38bdf8, #818cf8, #c084fc);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .sub-title {
+      font-size: 11px;
+      color: #94a3b8;
+      margin-top: 2px;
+    }
+
+    .header-stats {
+      display: flex;
+      gap: 14px;
+    }
+
+    .stat-pill {
+      background: rgba(15, 23, 42, 0.8);
+      border: 1px solid #334155;
+      border-radius: 6px;
+      padding: 5px 12px;
+      text-align: right;
+    }
+
+    .stat-label {
+      font-size: 9px;
+      color: #64748b;
+      text-transform: uppercase;
+      font-weight: 700;
+    }
+
+    .stat-val {
+      font-size: 12px;
+      color: #38bdf8;
+      font-weight: 800;
+    }
+
+    /* ─── Main Grid Layout (5 Core Swimlanes) ─── */
+    .workflow-grid {
+      display: grid;
+      grid-template-columns: 1.05fr 1.15fr 1.05fr 1.05fr 0.95fr;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+
+    /* ─── Column / Swimlane Container ─── */
+    .swimlane {
+      background: rgba(15, 23, 42, 0.75);
+      border-radius: 8px;
+      border: 1px solid #334155;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .swimlane-header {
+      padding: 8px 10px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid #334155;
+    }
+
+    .lane-1 .swimlane-header { background: linear-gradient(90deg, #0369a1, #0c4a6e); border-color: #0284c7; }
+    .lane-2 .swimlane-header { background: linear-gradient(90deg, #4338ca, #312e81); border-color: #6366f1; }
+    .lane-3 .swimlane-header { background: linear-gradient(90deg, #b45309, #78350f); border-color: #f59e0b; }
+    .lane-4 .swimlane-header { background: linear-gradient(90deg, #047857, #064e3b); border-color: #10b981; }
+    .lane-5 .swimlane-header { background: linear-gradient(90deg, #be185d, #831843); border-color: #ec4899; }
+
+    .lane-title {
+      font-size: 12px;
+      font-weight: 800;
+      color: #ffffff;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .lane-badge {
+      font-size: 9px;
+      padding: 2px 6px;
+      border-radius: 4px;
+      background: rgba(255, 255, 255, 0.2);
+      font-weight: 700;
+      color: #fff;
+    }
+
+    .swimlane-body {
+      padding: 8px;
+      display: flex;
+      flex-direction: column;
+      gap: 7px;
+      flex: 1;
+    }
+
+    /* ─── Workflow Step Card ─── */
+    .step-card {
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 6px;
+      padding: 7px 9px;
+      position: relative;
+    }
+
+    .step-card.highlight {
+      border-color: #38bdf8;
+      background: linear-gradient(145deg, #1e293b 0%, #0f172a 100%);
+      box-shadow: 0 0 10px rgba(56, 189, 248, 0.1);
+    }
+
+    .step-card.ai-highlight {
+      border-color: #818cf8;
+      background: linear-gradient(145deg, #1e1b4b 0%, #0f172a 100%);
+    }
+
+    .step-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 4px;
+    }
+
+    .step-num {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 17px;
+      height: 17px;
+      border-radius: 50%;
+      background: #38bdf8;
+      color: #0f172a;
+      font-weight: 900;
+      font-size: 9px;
+    }
+
+    .step-name {
+      font-size: 11px;
+      font-weight: 800;
+      color: #e2e8f0;
+      flex: 1;
+      margin-left: 6px;
+    }
+
+    .step-tag {
+      font-size: 8.5px;
+      padding: 1px 5px;
+      border-radius: 3px;
+      font-weight: 700;
+      background: #334155;
+      color: #94a3b8;
+    }
+
+    .tag-ai { background: #4f46e5; color: #ffffff; }
+    .tag-geo { background: #0284c7; color: #ffffff; }
+    .tag-act { background: #059669; color: #ffffff; }
+    .tag-sla { background: #d97706; color: #ffffff; }
+
+    .step-desc {
+      font-size: 9.5px;
+      color: #cbd5e1;
+      margin-bottom: 4px;
+      line-height: 1.3;
+    }
+
+    .bullet-list {
+      list-style: none;
+      font-size: 9px;
+      color: #94a3b8;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .bullet-list li {
+      display: flex;
+      align-items: flex-start;
+      gap: 4px;
+    }
+
+    .bullet-list li::before {
+      content: "•";
+      color: #38bdf8;
+      font-weight: bold;
+    }
+
+    /* ─── Interactive Connectors / Arrows ─── */
+    .flow-connector {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      padding: 2px 0;
+      color: #64748b;
+      font-size: 8.5px;
+      font-weight: 700;
+    }
+
+    .flow-connector svg {
+      width: 12px;
+      height: 12px;
+      stroke: #38bdf8;
+    }
+
+    /* ─── Bottom Architectural Deep-Dive Grid ─── */
+    .bottom-grid {
+      display: grid;
+      grid-template-columns: 1fr 1.35fr 1fr;
+      gap: 10px;
+    }
+
+    .arch-box {
+      background: rgba(15, 23, 42, 0.9);
+      border: 1px solid #334155;
+      border-radius: 8px;
+      padding: 9px 12px;
+    }
+
+    .arch-header {
+      font-size: 11px;
+      font-weight: 800;
+      color: #38bdf8;
+      border-bottom: 1px solid #334155;
+      padding-bottom: 4px;
+      margin-bottom: 6px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .tech-stack-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+      margin-top: 4px;
+    }
+
+    .tech-chip {
+      background: #1e293b;
+      border: 1px solid #475569;
+      color: #cbd5e1;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 8.5px;
+      font-weight: 600;
+    }
+
+    .status-matrix {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 4px;
+      margin-top: 4px;
+    }
+
+    .status-chip {
+      padding: 3px 5px;
+      border-radius: 4px;
+      font-size: 8.5px;
+      text-align: center;
+      font-weight: 700;
+      border: 1px solid transparent;
+    }
+
+    .st-sub { background: #1e3a5f; color: #93c5fd; border-color: #2563eb; }
+    .st-ai  { background: #312e81; color: #c7d2fe; border-color: #6366f1; }
+    .st-asg { background: #78350f; color: #fde68a; border-color: #d97706; }
+    .st-inp { background: #064e3b; color: #a7f3d0; border-color: #059669; }
+    .st-res { background: #134e4a; color: #99f6e4; border-color: #0d9488; }
+    .st-ver { background: #581c87; color: #e9d5ff; border-color: #9333ea; }
+    .st-cls { background: #14532d; color: #bbf7d0; border-color: #22c55e; }
+    .st-dup { background: #4c1d95; color: #ddd6fe; border-color: #7c3aed; }
+
+    /* ─── Formula / Formula Box ─── */
+    .formula-box {
+      background: #0f172a;
+      border: 1px solid #3b82f6;
+      border-radius: 5px;
+      padding: 4px 8px;
+      font-family: 'Courier New', Courier, monospace;
+      font-size: 8.5px;
+      color: #93c5fd;
+      margin-top: 4px;
+    }
+
+    /* Print Specific Tweaks */
+    @media print {
+      body {
+        background-color: #0b1120 !important;
+        width: 100% !important;
+        padding: 0 !important;
+      }
+      .no-print {
+        display: none !important;
+      }
+    }
+
+    .print-btn-bar {
+      position: fixed;
+      bottom: 15px;
+      right: 15px;
+      z-index: 9999;
+      display: flex;
+      gap: 10px;
+    }
+
+    .print-btn {
+      background: #38bdf8;
+      color: #0f172a;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 6px;
+      font-weight: 800;
+      font-size: 13px;
+      cursor: pointer;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Floating Print Guide & Trigger for User -->
+  <div class="print-btn-bar no-print">
+    <button class="print-btn" onclick="window.print()">🖨️ Print to A3 / Save PDF</button>
+  </div>
+
+  <!-- ─── TOP BANNER ─── -->
+  <header class="header-banner">
+    <div class="header-title-box">
+      <div class="gov-badge">CivicAI Platform</div>
+      <div>
+        <h1 class="main-title">CIVIC GRIEVANCE AI REDRESSAL SYSTEM — COMPLETE END-TO-END WORKFLOW</h1>
+        <p class="sub-title">Automated Vision Defect Inspection • NLP Routing • Spatio-Temporal Deduplication • Multi-Tier Location Hierarchy • SLA Governance</p>
+      </div>
+    </div>
+    <div class="header-stats">
+      <div class="stat-pill">
+        <div class="stat-label">AI Inference Time</div>
+        <div class="stat-val">&lt; 350 ms</div>
+      </div>
+      <div class="stat-pill">
+        <div class="stat-label">Location Precision</div>
+        <div class="stat-val">6-Tier Hierarchical</div>
+      </div>
+      <div class="stat-pill">
+        <div class="stat-label">Deduplication Metric</div>
+        <div class="stat-val">Haversine (&le;50m) + NLP</div>
+      </div>
+      <div class="stat-pill">
+        <div class="stat-label">Bilingual Support</div>
+        <div class="stat-val">English & தமிழ்</div>
+      </div>
+    </div>
+  </header>
+
+  <!-- ─── 5-COLUMN WORKFLOW SWIMLANES ─── -->
+  <main class="workflow-grid">
+
+    <!-- ── LANE 1: CITIZEN INTAKE ── -->
+    <div class="swimlane lane-1">
+      <div class="swimlane-header">
+        <span class="lane-title">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          1. Citizen Intake & Geocoding
+        </span>
+        <span class="lane-badge">PORTAL / PWA</span>
+      </div>
+      <div class="swimlane-body">
+        
+        <div class="step-card highlight">
+          <div class="step-header">
+            <span class="step-num">1</span>
+            <span class="step-name">Grievance Submission</span>
+            <span class="step-tag tag-geo">React + Leaflet</span>
+          </div>
+          <div class="step-desc">Citizen captures defect photo and details through the bilingual UI (English / தமிழ்).</div>
+          <ul class="bullet-list">
+            <li>Geotagged image upload via camera or file dialog</li>
+            <li>Category selection (Road, Water, Light, Garbage, Drain)</li>
+            <li>Title & description with Tamil voice/text input</li>
+          </ul>
+        </div>
+
+        <div class="flow-connector">
+          <span>Cascading 6-Tier Geographic Resolution</span>
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M12 5v14M19 12l-7 7-7-7"/></svg>
+        </div>
+
+        <div class="step-card">
+          <div class="step-header">
+            <span class="step-num">2</span>
+            <span class="step-name">Geographic Hierarchy Pin</span>
+            <span class="step-tag tag-geo">Spatial DB</span>
+          </div>
+          <div class="step-desc">Hierarchical resolution ensures zero jurisdiction ambiguity:</div>
+          <ul class="bullet-list">
+            <li><strong>State &rarr; Corporation:</strong> Greater Chennai Corp</li>
+            <li><strong>Zone &rarr; Ward:</strong> Zone 05 (Royapuram) &rarr; Ward 45</li>
+            <li><strong>Locality &rarr; Street:</strong> George Town &rarr; NSC Bose Rd</li>
+            <li><strong>Leaflet Map Interceptor:</strong> Auto-populates Lat/Long coordinates</li>
+          </ul>
+        </div>
+
+        <div class="flow-connector">
+          <span>Generates Unique Tracking Token</span>
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M12 5v14M19 12l-7 7-7-7"/></svg>
+        </div>
+
+        <div class="step-card">
+          <div class="step-header">
+            <span class="step-num">3</span>
+            <span class="step-name">ID & Status Tokenization</span>
+            <span class="step-tag">REST API</span>
+          </div>
+          <div class="step-desc">Token format: <code>GRV-2026-XXXXX</code> with initial state set to <code>Submitted</code>.</div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ── LANE 2: AI MICROSERVICE ── -->
+    <div class="swimlane lane-2">
+      <div class="swimlane-header">
+        <span class="lane-title">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>
+          2. AI Intelligence Engine
+        </span>
+        <span class="lane-badge">FASTAPI + PYTORCH</span>
+      </div>
+      <div class="swimlane-body">
+
+        <div class="step-card ai-highlight">
+          <div class="step-header">
+            <span class="step-num">4</span>
+            <span class="step-name">YOLOv8 Vision Inspection</span>
+            <span class="step-tag tag-ai">PyTorch YOLO</span>
+          </div>
+          <div class="step-desc">Scans defect image via <code>/predict-image</code> for automatic visual verification:</div>
+          <ul class="bullet-list">
+            <li>Detects Potholes, Garbage Dumps, Water Leaks, Dark Poles</li>
+            <li>Computes Bounding Box &amp; Model Confidence score (&gt;90%)</li>
+            <li>Flags non-civic or invalid images automatically</li>
+          </ul>
+        </div>
+
+        <div class="flow-connector">
+          <span>NLP Text &amp; Semantic Classification</span>
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M12 5v14M19 12l-7 7-7-7"/></svg>
+        </div>
+
+        <div class="step-card ai-highlight">
+          <div class="step-header">
+            <span class="step-num">5</span>
+            <span class="step-name">NLP Department Router</span>
+            <span class="step-tag tag-ai">TF-IDF Classifier</span>
+          </div>
+          <div class="step-desc">Classifies complaint text + Tamil keywords into target civic department:</div>
+          <ul class="bullet-list">
+            <li>Roads &amp; Bridges • Water Supply &amp; Sewerage (CMWSSB)</li>
+            <li>Solid Waste Management • Electrical &amp; Lighting • Public Health</li>
+          </ul>
+        </div>
+
+        <div class="flow-connector">
+          <span>Spatio-Temporal Clustering</span>
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M12 5v14M19 12l-7 7-7-7"/></svg>
+        </div>
+
+        <div class="step-card ai-highlight">
+          <div class="step-header">
+            <span class="step-num">6</span>
+            <span class="step-name">Deduplication Engine</span>
+            <span class="step-tag tag-ai">Haversine + Cosine</span>
+          </div>
+          <div class="step-desc">Detects existing unresolved tickets within 50 meters radius:</div>
+          <div class="formula-box">Dist = 2R &times; arcsin(&radic;hav(&Delta;lat)+cos&middot;cos&middot;hav(&Delta;lon)) &le; 50m</div>
+          <ul class="bullet-list" style="margin-top:4px;">
+            <li>Groups duplicates under Parent Ticket (<code>duplicateCount++</code>)</li>
+            <li>Prevents duplicate field worker dispatches</li>
+          </ul>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ── LANE 3: GOVERNANCE & SLA ── -->
+    <div class="swimlane lane-3">
+      <div class="swimlane-header">
+        <span class="lane-title">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          3. SLA & Department Triage
+        </span>
+        <span class="lane-badge">DEPT DASHBOARD</span>
+      </div>
+      <div class="swimlane-body">
+
+        <div class="step-card">
+          <div class="step-header">
+            <span class="step-num">7</span>
+            <span class="step-name">Dynamic Severity & Priority</span>
+            <span class="step-tag tag-sla">Score: 0-100</span>
+          </div>
+          <div class="step-desc">Calculates grievance urgency based on safety hazards:</div>
+          <ul class="bullet-list">
+            <li><strong>Critical (Score 85-95):</strong> Burst Pipe, Live Wire, Cave-in</li>
+            <li><strong>High (Score 70-84):</strong> Deep Crater, Main Arterial Road</li>
+            <li><strong>Medium/Low:</strong> Normal road patch, standard cleaning</li>
+          </ul>
+        </div>
+
+        <div class="flow-connector">
+          <span>Automated Work Order Allocation</span>
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M12 5v14M19 12l-7 7-7-7"/></svg>
+        </div>
+
+        <div class="step-card">
+          <div class="step-header">
+            <span class="step-num">8</span>
+            <span class="step-name">Officer Triage & Dispatch</span>
+            <span class="step-tag tag-act">Assignment</span>
+          </div>
+          <div class="step-desc">Department Admin or Auto-Assigner matches ticket to local Ward Staff:</div>
+          <ul class="bullet-list">
+            <li>Assigns designated Ward Assistant Engineer / Field Staff</li>
+            <li>Status changes to <code>Assigned</code></li>
+            <li>Triggers automated push &amp; SMS alerts to engineer</li>
+          </ul>
+        </div>
+
+        <div class="flow-connector">
+          <span>SLA Clock Starts</span>
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M12 5v14M19 12l-7 7-7-7"/></svg>
+        </div>
+
+        <div class="step-card">
+          <div class="step-header">
+            <span class="step-num">9</span>
+            <span class="step-name">SLA Countdown & Escalation</span>
+            <span class="step-tag tag-sla">Timer Engine</span>
+          </div>
+          <div class="step-desc">Strict resolution deadlines (24h / 48h / 72h). Unresolved tickets trigger automatic escalation to Zonal Commissioner.</div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ── LANE 4: FIELD RESOLUTION ── -->
+    <div class="swimlane lane-4">
+      <div class="swimlane-header">
+        <span class="lane-title">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+          4. Field Action & Repair
+        </span>
+        <span class="lane-badge">STAFF MOBILE APP</span>
+      </div>
+      <div class="swimlane-body">
+
+        <div class="step-card">
+          <div class="step-header">
+            <span class="step-num">10</span>
+            <span class="step-name">Staff Acceptance & Route</span>
+            <span class="step-tag tag-act">In Progress</span>
+          </div>
+          <div class="step-desc">Ground staff opens assigned defect with exact coordinates:</div>
+          <ul class="bullet-list">
+            <li>Navigates to spot using embedded GPS directions</li>
+            <li>Updates status to <code>In Progress</code> with repair kickoff timestamp</li>
+          </ul>
+        </div>
+
+        <div class="flow-connector">
+          <span>Physical Repair on Site</span>
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M12 5v14M19 12l-7 7-7-7"/></svg>
+        </div>
+
+        <div class="step-card highlight">
+          <div class="step-header">
+            <span class="step-num">11</span>
+            <span class="step-name">After-Image Proof Upload</span>
+            <span class="step-tag tag-act">Resolution</span>
+          </div>
+          <div class="step-desc">Mandatory physical evidence submission:</div>
+          <ul class="bullet-list">
+            <li>Uploads geotagged <strong>After Image</strong> of repaired site</li>
+            <li>Enters field engineer notes &amp; materials used</li>
+            <li>Status transitions to <code>Resolution Submitted</code></li>
+          </ul>
+        </div>
+
+        <div class="flow-connector">
+          <span>Automated Before vs After Verification</span>
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M12 5v14M19 12l-7 7-7-7"/></svg>
+        </div>
+
+        <div class="step-card">
+          <div class="step-header">
+            <span class="step-num">12</span>
+            <span class="step-name">Visual Proof Comparison</span>
+            <span class="step-tag">Dual Image Audit</span>
+          </div>
+          <div class="step-desc">Generates side-by-side Before/After comparison proof in the citizen's live tracking timeline.</div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ── LANE 5: CITIZEN AUDIT & CLOSURE ── -->
+    <div class="swimlane lane-5">
+      <div class="swimlane-header">
+        <span class="lane-title">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+          5. Citizen Audit & Closure
+        </span>
+        <span class="lane-badge">FINAL AUDIT</span>
+      </div>
+      <div class="swimlane-body">
+
+        <div class="step-card highlight">
+          <div class="step-header">
+            <span class="step-num">13</span>
+            <span class="step-name">Citizen Verification Prompt</span>
+            <span class="step-tag">Notification</span>
+          </div>
+          <div class="step-desc">Citizen receives instant SMS/Portal notification with resolution photos.</div>
+        </div>
+
+        <div class="flow-connector">
+          <span>Citizen Feedback Gateway</span>
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M12 5v14M19 12l-7 7-7-7"/></svg>
+        </div>
+
+        <div class="step-card">
+          <div class="step-header">
+            <span class="step-num">14</span>
+            <span class="step-name">Star Rating &amp; Feedback</span>
+            <span class="step-tag tag-act">Citizen Confirmation</span>
+          </div>
+          <div class="step-desc">Citizen evaluates work quality (1-5 Stars + comments):</div>
+          <ul class="bullet-list">
+            <li><strong>Satisfied:</strong> Marks <code>Citizen Confirmed</code> &rarr; <code>Closed</code></li>
+            <li><strong>Unsatisfied:</strong> Triggers <code>Reopened</code> with escalation</li>
+          </ul>
+        </div>
+
+        <div class="flow-connector">
+          <span>Executive Intelligence Sync</span>
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M12 5v14M19 12l-7 7-7-7"/></svg>
+        </div>
+
+        <div class="step-card">
+          <div class="step-header">
+            <span class="step-num">15</span>
+            <span class="step-name">Analytics & Ward Scorecard</span>
+            <span class="step-tag">Executive KPI</span>
+          </div>
+          <div class="step-desc">Aggregates resolution SLA rates, ward heatmaps, and staff performance index.</div>
+        </div>
+
+      </div>
+    </div>
+
+  </main>
+
+  <!-- ─── BOTTOM DEEP DIVE ARCHITECTURE & DATA SPECIFICATION ─── -->
+  <footer class="bottom-grid">
+
+    <!-- Card 1: Tech Stack & Microservice Architecture -->
+    <div class="arch-box">
+      <div class="arch-header">
+        <span>⚡ SYSTEM TECHNOLOGY STACK</span>
+        <span style="color:#94a3b8; font-size:9px;">TRI-TIER ARCHITECTURE</span>
+      </div>
+      <div style="font-size:9.5px; color:#cbd5e1; margin-bottom:4px;">
+        High-throughput microservice ecosystem connecting React SPA, Express Core API, and Python AI Service:
+      </div>
+      <div class="tech-stack-chips">
+        <span class="tech-chip" style="color:#38bdf8; border-color:#0284c7;">Frontend: React 18 + Vite + TailwindCSS</span>
+        <span class="tech-chip" style="color:#38bdf8; border-color:#0284c7;">Maps: React-Leaflet + OpenStreetMap</span>
+        <span class="tech-chip" style="color:#818cf8; border-color:#6366f1;">Backend: Node.js + Express + JWT</span>
+        <span class="tech-chip" style="color:#818cf8; border-color:#6366f1;">Database: MongoDB + Mongoose ORM</span>
+        <span class="tech-chip" style="color:#34d399; border-color:#059669;">AI Engine: Python 3.11 + FastAPI</span>
+        <span class="tech-chip" style="color:#34d399; border-color:#059669;">Computer Vision: Ultralytics YOLOv8</span>
+        <span class="tech-chip" style="color:#34d399; border-color:#059669;">NLP: Scikit-Learn TF-IDF + Cosine</span>
+      </div>
+    </div>
+
+    <!-- Card 2: State Lifecycle Transitions -->
+    <div class="arch-box">
+      <div class="arch-header">
+        <span>🔄 COMPLAINT LIFECYCLE STATE MATRIX</span>
+        <span style="color:#94a3b8; font-size:9px;">12 VALID STATUS STATES</span>
+      </div>
+      <div class="status-matrix">
+        <div class="status-chip st-sub">Submitted</div>
+        <div class="status-chip st-ai">AI Processing</div>
+        <div class="status-chip st-ai">Verified</div>
+        <div class="status-chip st-asg">Assigned</div>
+        <div class="status-chip st-inp">In Progress</div>
+        <div class="status-chip st-res">Resolution Submitted</div>
+        <div class="status-chip st-ver">Verification</div>
+        <div class="status-chip st-cls">Citizen Confirmed</div>
+        <div class="status-chip st-cls">Closed</div>
+        <div class="status-chip st-dup">Duplicate</div>
+        <div class="status-chip st-asg">Escalated</div>
+        <div class="status-chip st-res">Reopened</div>
+      </div>
+      <div style="font-size:8.5px; color:#94a3b8; margin-top:5px; text-align:center;">
+        Transitions enforce strict authorization checks: Citizen &harr; Staff &harr; Department Admin &harr; Super Admin
+      </div>
+    </div>
+
+    <!-- Card 3: 6-Tier Location Hierarchy Spec -->
+    <div class="arch-box">
+      <div class="arch-header">
+        <span>📍 6-TIER GEOGRAPHIC JURISDICTION</span>
+        <span style="color:#94a3b8; font-size:9px;">ZERO-COLLISION ROUTING</span>
+      </div>
+      <div style="display:flex; flex-direction:column; gap:3px; font-size:9px; color:#cbd5e1;">
+        <div><strong>1. Municipal Corporation:</strong> Greater Chennai / Coimbatore / Madurai</div>
+        <div><strong>2. Administrative Zone:</strong> Zone 01 to Zone 15</div>
+        <div><strong>3. Ward Division:</strong> Ward 01 to Ward 200</div>
+        <div><strong>4. Locality / Neighborhood:</strong> E.g. Royapuram / T. Nagar / Velachery</div>
+        <div><strong>5. Street / Avenue:</strong> E.g. NSC Bose Road / 4th Main Road</div>
+        <div><strong>6. GPS Coordinate &amp; Landmark:</strong> Exact Lat/Long Pin (13.0827&deg; N, 80.2707&deg; E)</div>
+      </div>
+    </div>
+
+  </footer>
+
+</body>
+</html>
