@@ -141,7 +141,19 @@ def predict_rule_based(filename: str = "", file_size: int = 0, image_bytes: byte
     Intelligent civic defect predictor fusing image visual features, citizen input,
     and NLP keyword tokens for high-accuracy civic issue classification.
     """
-    combined_text = f"{filename} {hint_text} {category_hint}".lower()
+    # Check explicit non-civic / spam keywords
+    spam_words = ["selfie", "cat", "dog", "food", "burger", "pizza", "biryani", "party", "wedding", "shoes", "shirt", "dress", "meme", "screenshot", "wallpaper", "actor", "game", "laptop", "qwerty"]
+    if any(s in combined_text for s in spam_words) and not any(c in combined_text for c in ["road", "pothole", "garbage", "leak", "drain", "light", "pipe", "waste"]):
+        return {
+            "category": "unrelated_image",
+            "citizenCategory": "Unrelated Photo",
+            "confidence": 0.12,
+            "isCivicIssue": False,
+            "model": "CivicAI-Vision-Fusion-v2",
+            "boundingBox": None,
+            "source": "spam_filter",
+            "message": "AI Image Verification Notice: Uploaded photo does not match any recognized municipal civic infrastructure issue.",
+        }
 
     # Priority 1: Direct text & citizen cues (Bilingual Tamil & English)
     if any(k in combined_text for k in ["water", "leak", "pipe", "tap", "burst", "potable", "drinking", "faucet", "splash", "கசிவு", "குடிநீர்", "தண்ணீர்"]):

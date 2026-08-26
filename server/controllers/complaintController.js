@@ -2,8 +2,9 @@ const Complaint = require("../models/Complaint");
 const User = require("../models/User");
 const Department = require("../models/Department");
 const { Corporation, Zone, Ward, Locality, Street } = require("../models/Location");
-const { runAIPipelineInternal } = require("./aiController");
+const { runAIPipelineInternal, validateCivicContent } = require("./aiController");
 const path = require("path");
+const fs = require("fs");
 
 // Helper to generate unique complaintId: GRV-2026-XXXXX
 const generateComplaintId = () => {
@@ -46,6 +47,23 @@ const createComplaint = async (req, res) => {
       return res.status(400).json({
         success: false,
         message: "Please provide grievance title and description.",
+      });
+    }
+
+    // ── Pre-AI Inspection: Filter Out Unwanted / Non-Civic / Irrelevant Photos & Text ──
+    const originalFilename = req.file ? req.file.originalname : "";
+    const civicCheck = validateCivicContent(originalFilename, `${title} ${description}`, citizenCategory || "");
+    if (!civicCheck.isValid) {
+      if (req.file && fs.existsSync(req.file.path)) {
+        try {
+          fs.unlinkSync(req.file.path);
+        } catch (e) {}
+      }
+      return res.status(400).json({
+        success: false,
+        isUnwantedImage: true,
+        reason: civicCheck.reason,
+        message: civicCheck.message || "AI Verification Notice: Uploaded photo does not show a recognized civic issue.",
       });
     }
 

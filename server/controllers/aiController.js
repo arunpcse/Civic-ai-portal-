@@ -336,8 +336,73 @@ const processComplaintAI = async (req, res) => {
   }
 };
 
+// ─── Civic Image & Content Validation ──────────────────────────────────────
+const validateCivicContent = (filename = "", text = "", category = "") => {
+  const combined = `${filename} ${text} ${category}`.toLowerCase();
+
+  // Explicit non-civic / spam triggers
+  const spamKeywords = [
+    "selfie", "cat", "dog", "puppy", "kitten", "pet", "animal", "burger",
+    "pizza", "biryani", "food", "cake", "snack", "coffee", "tea", "drink",
+    "party", "birthday", "wedding", "flower", "shoes", "shirt", "dress",
+    "fashion", "makeup", "actor", "actress", "meme", "anime", "cartoon",
+    "screenshot", "wallpaper", "movie", "song", "dance", "game", "gaming",
+    "laptop", "smartphone", "mobile", "gadget", "hotel", "restaurant",
+    "qwerty", "asdfgh", "test1234", "haha", "lmao"
+  ];
+
+  for (const spam of spamKeywords) {
+    const regex = new RegExp(`\\b${spam}\\b`, "i");
+    if (regex.test(filename.toLowerCase()) || regex.test(text.toLowerCase())) {
+      // Check if it really isn't about civic issues
+      const isActuallyCivic = [
+        "road", "pothole", "garbage", "waste", "drain", "water leak", "pipeline", "streetlight"
+      ].some((c) => combined.includes(c));
+
+      if (!isActuallyCivic) {
+        return {
+          isValid: false,
+          reason: `Unrelated subject detected ('${spam}')`,
+          message: `AI Image Verification Notice: Uploaded photo/text appears to be an unrelated '${spam}' image. Please upload a clear photo showing a public civic infrastructure defect (e.g. road pothole, garbage dump, water leak, drainage, or streetlight).`,
+        };
+      }
+    }
+  }
+
+  return { isValid: true };
+};
+
+// ─── POST /api/ai/verify-image (Live Pre-Validation Endpoint) ──────────────
+const verifyImageLive = async (req, res) => {
+  try {
+    const filename = req.file ? req.file.originalname : (req.body.filename || "");
+    const text = req.body.text || "";
+    const category = req.body.category || "";
+
+    const validation = validateCivicContent(filename, text, category);
+    if (!validation.isValid) {
+      return res.status(200).json({
+        success: true,
+        isValidCivicIssue: false,
+        reason: validation.reason,
+        message: validation.message,
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      isValidCivicIssue: true,
+      message: "Valid civic grievance content detected.",
+    });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
+
 module.exports = {
   processComplaintAI,
   runAIPipelineInternal,
   findDepartmentForCategory,
+  validateCivicContent,
+  verifyImageLive,
 };

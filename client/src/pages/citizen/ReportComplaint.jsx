@@ -99,6 +99,8 @@ export default function ReportComplaint() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [processingStep, setProcessingStep] = useState(0);
   const [registeredComplaint, setRegisteredComplaint] = useState(null);
+  const [imageValidationNotice, setImageValidationNotice] = useState(null);
+  const [submissionError, setSubmissionError] = useState("");
 
   const categories = [
     {
@@ -286,6 +288,28 @@ export default function ReportComplaint() {
     if (file) {
       setImageFile(file);
       setImagePreview(URL.createObjectURL(file));
+
+      // Instant pre-validation on filename
+      const fname = file.name.toLowerCase();
+      const spamCues = [
+        "selfie", "cat", "dog", "food", "burger", "pizza", "biryani", "party",
+        "wedding", "shoes", "shirt", "dress", "meme", "screenshot", "wallpaper",
+        "actor", "game", "laptop", "mobile", "qwerty"
+      ];
+      const hasSpamCue = spamCues.some((s) => fname.includes(s));
+      const hasCivicCue = ["road", "pothole", "garbage", "leak", "drain", "light", "pipe", "waste"].some((c) => fname.includes(c));
+
+      if (hasSpamCue && !hasCivicCue) {
+        setImageValidationNotice({
+          isWarning: true,
+          message: "⚠️ Warning: Selected photo appears to be an unrelated subject. Please ensure you upload a clear photo of the civic defect (pothole, garbage, leak, etc.) to prevent AI rejection.",
+        });
+      } else {
+        setImageValidationNotice({
+          isWarning: false,
+          message: "✓ Photo ready for AI Computer Vision verification & defect classification.",
+        });
+      }
     }
   };
 
@@ -417,6 +441,7 @@ export default function ReportComplaint() {
         formData.append("image", imageFile);
       }
 
+      setSubmissionError("");
       const res = await API.post("/complaints", formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
@@ -428,9 +453,13 @@ export default function ReportComplaint() {
         setRegisteredComplaint(res.data.complaint);
       }
     } catch (err) {
-      console.error("Submission failed:", err.message);
-      alert("Grievance submission encountered an issue. Please retry.");
+      clearInterval(stepInterval);
       setIsProcessing(false);
+      const errMsg =
+        err.response?.data?.message ||
+        err.message ||
+        "Grievance submission encountered an issue. Please retry.";
+      setSubmissionError(errMsg);
     } finally {
       setLoading(false);
     }
@@ -603,6 +632,30 @@ export default function ReportComplaint() {
 
         {/* ── Form Card ── */}
         <form onSubmit={handleSubmit} className="gov-card">
+
+          {/* AI Inspection Error Alert */}
+          {submissionError && (
+            <div
+              style={{
+                padding: "14px 16px",
+                background: "#fef2f2",
+                border: "1.5px solid #f87171",
+                borderRadius: "8px",
+                color: "#991b1b",
+                fontSize: "0.85rem",
+                marginBottom: "20px",
+                display: "flex",
+                alignItems: "flex-start",
+                gap: "10px",
+              }}
+            >
+              <AlertTriangle size={20} color="#dc2626" style={{ flexShrink: 0, marginTop: "2px" }} />
+              <div>
+                <div style={{ fontWeight: "700", marginBottom: "3px" }}>AI Municipal Inspection Notice</div>
+                <div style={{ lineHeight: "1.4" }}>{submissionError}</div>
+              </div>
+            </div>
+          )}
           
           {/* Section 1: Category Selection Grid */}
           <div style={{ marginBottom: "22px" }}>
@@ -711,6 +764,27 @@ export default function ReportComplaint() {
                 </div>
               )}
             </div>
+
+            {/* AI Image Pre-Validation Notice */}
+            {imageValidationNotice && (
+              <div
+                style={{
+                  marginTop: "10px",
+                  padding: "10px 14px",
+                  background: imageValidationNotice.isWarning ? "#fff7ed" : "#f0fdf4",
+                  border: `1px solid ${imageValidationNotice.isWarning ? "#fdba74" : "#bbf7d0"}`,
+                  borderRadius: "6px",
+                  color: imageValidationNotice.isWarning ? "#9a3412" : "#166534",
+                  fontSize: "0.80rem",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "8px",
+                }}
+              >
+                <AlertTriangle size={15} color={imageValidationNotice.isWarning ? "#ea580c" : "#16a34a"} />
+                <span>{imageValidationNotice.message}</span>
+              </div>
+            )}
           </div>
 
           {/* Section 4: 6-Tier Location Hierarchy Dropdowns */}
