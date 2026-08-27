@@ -15,6 +15,7 @@ import {
   CheckCircle2,
   Phone,
 } from "lucide-react";
+import FullscreenButton from "../components/FullscreenButton";
 
 export default function Login() {
   const { login } = useContext(AuthContext);
@@ -158,7 +159,8 @@ export default function Login() {
           </div>
         </div>
 
-        <div>
+        <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+          <FullscreenButton />
           <Link
             to="/register"
             className="gov-btn gov-btn-secondary gov-btn-sm"

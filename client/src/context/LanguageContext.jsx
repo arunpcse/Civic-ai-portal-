@@ -13,6 +13,8 @@ const translations = {
     logout: "Logout",
     sign_in: "Sign In",
     register_btn: "New Citizen Registration",
+    full_screen: "Full Screen",
+    exit_fullscreen: "Exit Full Screen",
 
     // Navigation
     nav_menu: "Menu",
@@ -128,6 +130,8 @@ const translations = {
     logout: "வெளியேறு",
     sign_in: "உள்நுழைக",
     register_btn: "புதிய குடிமக்கள் பதிவு",
+    full_screen: "முழுத்திரை",
+    exit_fullscreen: "முழுத்திரை நீக்கு",
 
     // Navigation
     nav_menu: "பட்டியல்",

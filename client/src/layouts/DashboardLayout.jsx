@@ -19,6 +19,7 @@ import {
   Languages,
 } from "lucide-react";
 import NotificationBell from "../components/NotificationBell";
+import FullscreenButton from "../components/FullscreenButton";
 
 export default function DashboardLayout({ children }) {
   const { currentUser, logout } = useContext(AuthContext);
@@ -181,6 +182,9 @@ export default function DashboardLayout({ children }) {
               </div>
             </div>
           )}
+
+          {/* Fullscreen Button */}
+          <FullscreenButton />
 
           {/* Logout Button */}
           <button

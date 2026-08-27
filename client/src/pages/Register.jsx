@@ -3,6 +3,7 @@ import { AuthContext } from "../context/AuthContext";
 import { Link, useNavigate } from "react-router-dom";
 import { Shield, UserPlus, ArrowRight, AlertCircle, Building, Phone } from "lucide-react";
 import API from "../services/api";
+import FullscreenButton from "../components/FullscreenButton";
 
 export default function Register() {
   const { registerUser } = useContext(AuthContext);
@@ -77,6 +78,7 @@ export default function Register() {
             </div>
           </div>
         </div>
+        <FullscreenButton />
       </header>
 
       {/* ── Main Register Layout ── */}
