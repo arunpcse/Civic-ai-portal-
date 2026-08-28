@@ -28,6 +28,7 @@ export default function StaffDashboard() {
   const [resolutionRemarks, setResolutionRemarks] = useState("");
   const [afterImage, setAfterImage] = useState(null);
   const [afterPreview, setAfterPreview] = useState("");
+  const [afterBase64, setAfterBase64] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
   const fetchTasks = async () => {
@@ -59,11 +60,20 @@ export default function StaffDashboard() {
     }
   };
 
+
+
   const handleAfterImageChange = (e) => {
     const file = e.target.files[0];
     if (file) {
       setAfterImage(file);
       setAfterPreview(URL.createObjectURL(file));
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        if (typeof reader.result === "string") {
+          setAfterBase64(reader.result);
+        }
+      };
+      reader.readAsDataURL(file);
     }
   };
 
@@ -81,10 +91,11 @@ export default function StaffDashboard() {
       if (afterImage) {
         formData.append("afterImage", afterImage);
       }
+      if (afterBase64) {
+        formData.append("afterBase64", afterBase64);
+      }
 
-      const res = await API.put(`/staff/task/${selectedTask._id}/resolve`, formData, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
+      const res = await API.put(`/staff/task/${selectedTask._id}/resolve`, formData);
 
       if (res.data.success) {
         alert("Work order resolution submitted to Department Head for verification!");

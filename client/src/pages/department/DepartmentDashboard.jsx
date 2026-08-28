@@ -146,9 +146,9 @@ export default function DepartmentDashboard() {
                     <div style={{ fontSize: "0.74rem", fontWeight: "700", color: "#64748b", marginBottom: "6px", textTransform: "uppercase" }}>Before Repair</div>
                     <div style={{ height: "180px", borderRadius: "8px", overflow: "hidden", border: "1px solid #e2e8f0", background: "#f8fafc" }}>
                       <img
-                        src={formatImageUrl(verifyingComplaint.beforeImage || verifyingComplaint.imageUrl)}
+                        src={formatImageUrl(verifyingComplaint.beforeImage || verifyingComplaint.imageUrl, verifyingComplaint.aiCategory || verifyingComplaint.citizenCategory)}
                         alt="Before"
-                        onError={(e) => { e.currentTarget.src = "https://images.unsplash.com/photo-1515162816999-a0c47dc192f7?w=800&q=80"; }}
+                        onError={(e) => { e.currentTarget.src = formatImageUrl("", verifyingComplaint.aiCategory || verifyingComplaint.citizenCategory); }}
                         style={{ width: "100%", height: "100%", objectFit: "cover" }}
                       />
                     </div>

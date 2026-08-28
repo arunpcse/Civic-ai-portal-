@@ -194,15 +194,27 @@ const updateTaskStatus = async (req, res) => {
   }
 };
 
+const fs = require("fs");
+
 const submitResolution = async (req, res) => {
   try {
-    const { resolutionRemarks } = req.body;
+    const { resolutionRemarks, afterBase64 } = req.body;
     const complaint = await Complaint.findOne({ _id: req.params.id, assignedStaff: req.user._id });
 
     if (!complaint) return res.status(404).json({ success: false, message: "Task not found" });
 
     complaint.resolutionRemarks = resolutionRemarks || complaint.resolutionRemarks;
-    if (req.file) complaint.afterImage = req.file.path;
+    if (afterBase64 && afterBase64.startsWith("data:image/")) {
+      complaint.afterImage = afterBase64;
+    } else if (req.file && fs.existsSync(req.file.path)) {
+      try {
+        const fileBuffer = fs.readFileSync(req.file.path);
+        const mime = req.file.mimetype || "image/jpeg";
+        complaint.afterImage = `data:${mime};base64,${fileBuffer.toString("base64")}`;
+      } catch (err) {
+        complaint.afterImage = req.file.path;
+      }
+    }
     complaint.status = "Resolution Submitted";
     await complaint.save();
 

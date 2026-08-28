@@ -84,6 +84,26 @@ export default function DemoSwitcher() {
     }
   };
 
+  const handleClearComplaints = async () => {
+    if (!window.confirm("Are you sure you want to clear all complaints?")) return;
+    setSeeding(true);
+    setMessage("Clearing all grievance records...");
+    try {
+      const res = await API.post("/complaints/clear-all");
+      if (res.data.success) {
+        setMessage("All complaints cleared successfully!");
+        setTimeout(() => {
+          setMessage("");
+          window.location.reload();
+        }, 1200);
+      }
+    } catch (err) {
+      setMessage("Clear failed: " + (err.response?.data?.message || err.message));
+    } finally {
+      setSeeding(false);
+    }
+  };
+
   return (
     <div
       style={{
@@ -125,7 +145,7 @@ export default function DemoSwitcher() {
             position: "absolute",
             bottom: "48px",
             right: "0",
-            width: "360px",
+            width: "370px",
             background: "#ffffff",
             borderRadius: "12px",
             boxShadow: "0 20px 25px -5px rgba(15, 23, 42, 0.2), 0 8px 10px -6px rgba(15, 23, 42, 0.1)",
@@ -143,16 +163,27 @@ export default function DemoSwitcher() {
                 Switch instantly during presentation review
               </p>
             </div>
-            <button
-              onClick={handleSeedDatabase}
-              disabled={seeding}
-              className="gov-btn gov-btn-secondary gov-btn-sm"
-              title="Reset & populate demo data"
-              style={{ fontSize: "0.72rem", padding: "4px 8px" }}
-            >
-              <RefreshCw size={12} className={seeding ? "spin-indicator" : ""} />
-              {seeding ? "Seeding..." : "Reset DB"}
-            </button>
+            <div style={{ display: "flex", gap: "6px" }}>
+              <button
+                onClick={handleClearComplaints}
+                disabled={seeding}
+                className="gov-btn gov-btn-secondary gov-btn-sm"
+                title="Clear all grievance records"
+                style={{ fontSize: "0.70rem", padding: "4px 7px", color: "#dc2626", borderColor: "#fca5a5" }}
+              >
+                Clear (0)
+              </button>
+              <button
+                onClick={handleSeedDatabase}
+                disabled={seeding}
+                className="gov-btn gov-btn-secondary gov-btn-sm"
+                title="Reset & populate demo data"
+                style={{ fontSize: "0.70rem", padding: "4px 7px" }}
+              >
+                <RefreshCw size={11} className={seeding ? "spin-indicator" : ""} />
+                {seeding ? "..." : "Reset"}
+              </button>
+            </div>
           </div>
 
           {message && (

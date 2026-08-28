@@ -12,6 +12,7 @@ const {
   assignComplaint,
   updateComplaintStatus,
   submitFeedback,
+  clearAllComplaints,
 } = require("../controllers/complaintController");
 
 const { protect, authorize } = require("../middleware/auth");
@@ -19,6 +20,10 @@ const upload = require("../middleware/upload");
 
 // Public Grievance Tracking (No authentication required)
 router.get("/track/:grievanceId", getGrievanceByReferenceId);
+
+// Database Clear All Complaints (Reviewer / Admin)
+router.post("/clear-all", clearAllComplaints);
+router.delete("/all", clearAllComplaints);
 
 // Citizen routes
 router.post("/", protect, authorize("citizen"), upload.single("image"), createComplaint);

@@ -71,6 +71,7 @@ export default function ReportComplaint() {
   const [citizenCategory, setCitizenCategory] = useState("Pothole / Road Damage");
   const [imageFile, setImageFile] = useState(null);
   const [imagePreview, setImagePreview] = useState("");
+  const [imageBase64, setImageBase64] = useState("");
 
   // ── 6-Tier Location Hierarchy State ──
   const [corporations, setCorporations] = useState([]);
@@ -290,6 +291,15 @@ export default function ReportComplaint() {
       setImageFile(file);
       setImagePreview(URL.createObjectURL(file));
 
+      // Read file to Base64 Data URI for guaranteed cross-deployment persistence
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        if (typeof reader.result === "string") {
+          setImageBase64(reader.result);
+        }
+      };
+      reader.readAsDataURL(file);
+
       // Instant pre-validation on filename
       const fname = file.name.toLowerCase();
       const spamCues = [
@@ -441,23 +451,30 @@ export default function ReportComplaint() {
       if (imageFile) {
         formData.append("image", imageFile);
       }
+      if (imageBase64) {
+        formData.append("imageBase64", imageBase64);
+      }
 
       setSubmissionError("");
       const res = await API.post("/complaints", formData, {
-        headers: { "Content-Type": "multipart/form-data" },
+        timeout: 25000,
       });
 
       clearInterval(stepInterval);
       setProcessingStep(processingStepsList.length);
 
-      if (res.data.success) {
+      if (res.data.success && res.data.complaint) {
         setRegisteredComplaint(res.data.complaint);
+      } else {
+        setIsProcessing(false);
+        setSubmissionError(res.data.message || "Failed to register grievance.");
       }
     } catch (err) {
       clearInterval(stepInterval);
       setIsProcessing(false);
       const errMsg =
         err.response?.data?.message ||
+        (err.code === "ECONNABORTED" ? "Request timed out. Please check your internet connection or server status." : null) ||
         err.message ||
         "Grievance submission encountered an issue. Please retry.";
       setSubmissionError(errMsg);

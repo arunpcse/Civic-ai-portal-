@@ -12,11 +12,30 @@ const generateComplaintId = () => {
   return `GRV-2026-${randomNum}`;
 };
 
-// Helper: resolve afterImage / beforeImage to a publicly accessible URL
-const resolveImageUrl = (rawPath) => {
-  if (!rawPath) return "";
-  if (rawPath.startsWith("http://") || rawPath.startsWith("https://")) return rawPath;
-  // Local file path stored by multer — strip to filename and serve via /uploads
+// Helper: category-specific fallback image
+const getCategoryFallbackImage = (category = "") => {
+  const cat = (category || "").toLowerCase();
+  if (cat.includes("water") || cat.includes("leak") || cat.includes("pipe") || cat.includes("குடிநீர்") || cat.includes("தண்ணீர்")) {
+    return "https://images.unsplash.com/photo-1585672840542-a89e6e8e89fe?w=800&q=80"; // Water leakage
+  }
+  if (cat.includes("garb") || cat.includes("waste") || cat.includes("trash") || cat.includes("dump") || cat.includes("குப்பை")) {
+    return "https://images.unsplash.com/photo-1530587191325-3db32d826c18?w=800&q=80"; // Garbage dump
+  }
+  if (cat.includes("drain") || cat.includes("sewer") || cat.includes("manhole") || cat.includes("சாக்கடை")) {
+    return "https://images.unsplash.com/photo-1563245372-f21724e3856d?w=800&q=80"; // Drainage problem
+  }
+  if (cat.includes("light") || cat.includes("lamp") || cat.includes("electric") || cat.includes("மின்")) {
+    return "https://images.unsplash.com/photo-1509114397022-ed747cca3f65?w=800&q=80"; // Streetlight
+  }
+  return "https://images.unsplash.com/photo-1515162816999-a0c47dc192f7?w=800&q=80"; // Pothole / Road damage
+};
+
+// Helper: resolve afterImage / beforeImage to a publicly accessible URL or data URI
+const resolveImageUrl = (rawPath, category = "") => {
+  if (!rawPath) return getCategoryFallbackImage(category);
+  if (rawPath.startsWith("data:image/") || rawPath.startsWith("http://") || rawPath.startsWith("https://")) {
+    return rawPath;
+  }
   const filename = rawPath.replace(/\\/g, "/").split("/").pop();
   const baseUrl = process.env.BASE_URL || `http://localhost:${process.env.PORT || 5000}`;
   return `${baseUrl}/uploads/${filename}`;
@@ -69,12 +88,20 @@ const createComplaint = async (req, res) => {
 
     let imageUrl = "";
 
-    // If file is uploaded locally, construct public URL served via express.static
-    if (req.file) {
-      imageUrl = resolveImageUrl(req.file.path);
+    // Prioritize direct Base64 data URI from client, then multer req.file buffer, then fallback
+    if (req.body.imageBase64 && req.body.imageBase64.startsWith("data:image/")) {
+      imageUrl = req.body.imageBase64;
+    } else if (req.file && fs.existsSync(req.file.path)) {
+      try {
+        const fileBuffer = fs.readFileSync(req.file.path);
+        const mime = req.file.mimetype || "image/jpeg";
+        imageUrl = `data:${mime};base64,${fileBuffer.toString("base64")}`;
+      } catch (err) {
+        imageUrl = resolveImageUrl(req.file.path, citizenCategory);
+      }
     } else {
-      // Default high quality defect placeholder
-      imageUrl = "https://images.unsplash.com/photo-1515162816999-a0c47dc192f7?w=800&q=80";
+      // Dynamic category-based fallback
+      imageUrl = getCategoryFallbackImage(citizenCategory);
     }
 
     const complaintId = generateComplaintId();
@@ -186,10 +213,10 @@ const getComplaintById = async (req, res) => {
       });
     }
 
-    // Normalise image URLs before sending
-    if (complaint.beforeImage) complaint.beforeImage = resolveImageUrl(complaint.beforeImage);
-    if (complaint.afterImage) complaint.afterImage = resolveImageUrl(complaint.afterImage);
-    if (complaint.imageUrl) complaint.imageUrl = resolveImageUrl(complaint.imageUrl);
+    // Normalize image URLs before sending
+    if (complaint.beforeImage) complaint.beforeImage = resolveImageUrl(complaint.beforeImage, complaint.aiCategory || complaint.citizenCategory);
+    if (complaint.afterImage) complaint.afterImage = resolveImageUrl(complaint.afterImage, complaint.aiCategory || complaint.citizenCategory);
+    if (complaint.imageUrl) complaint.imageUrl = resolveImageUrl(complaint.imageUrl, complaint.aiCategory || complaint.citizenCategory);
 
     res.status(200).json({
       success: true,
@@ -313,7 +340,7 @@ const assignComplaint = async (req, res) => {
 // @access  Private/Staff,DeptHead,Admin
 const updateComplaintStatus = async (req, res) => {
   try {
-    const { status } = req.body;
+    const { status, resolutionRemarks } = req.body;
 
     const validStatuses = [
       "Submitted", "AI Processing", "Verified", "Assigned",
@@ -321,17 +348,30 @@ const updateComplaintStatus = async (req, res) => {
       "Resolved", "Citizen Confirmed", "Closed", "Rejected", "Duplicate",
     ];
 
-    if (!validStatuses.includes(status)) {
+    if (status && !validStatuses.includes(status)) {
       return res.status(400).json({ success: false, message: `Invalid status: ${status}` });
     }
 
     const complaint = await Complaint.findById(req.params.id);
     if (!complaint) return res.status(404).json({ success: false, message: "Complaint not found." });
 
-    complaint.status = status;
+    if (status) complaint.status = status;
+    if (resolutionRemarks) complaint.resolutionRemarks = resolutionRemarks;
+
+    // If staff uploads afterImage
+    if (req.file && fs.existsSync(req.file.path)) {
+      try {
+        const fileBuffer = fs.readFileSync(req.file.path);
+        const mime = req.file.mimetype || "image/jpeg";
+        complaint.afterImage = `data:${mime};base64,${fileBuffer.toString("base64")}`;
+      } catch (err) {
+        complaint.afterImage = resolveImageUrl(req.file.path, complaint.aiCategory);
+      }
+    }
+
     await complaint.save();
 
-    res.status(200).json({ success: true, message: `Status updated to '${status}'.`, complaint });
+    res.status(200).json({ success: true, message: `Status updated to '${complaint.status}'.`, complaint });
   } catch (error) {
     console.error("Update Status Error:", error);
     res.status(500).json({ success: false, message: error.message });
@@ -355,7 +395,6 @@ const submitFeedback = async (req, res) => {
       return res.status(404).json({ success: false, message: "Complaint not found." });
     }
 
-    // Allow feedback for Resolved or Citizen Confirmed complaints
     const feedbackAllowedStatuses = ["Resolved", "Citizen Confirmed", "Closed"];
     if (!feedbackAllowedStatuses.includes(complaint.status)) {
       return res.status(400).json({
@@ -388,6 +427,24 @@ const submitFeedback = async (req, res) => {
   }
 };
 
+// @desc    Clear all complaints from database (Admin / Reviewer reset)
+// @route   DELETE /api/complaints/all / POST /api/complaints/clear-all
+// @access  Public / Reviewer
+const clearAllComplaints = async (req, res) => {
+  try {
+    const result = await Complaint.deleteMany({});
+    console.log(`[+] Cleared all complaints. Deleted count: ${result.deletedCount}`);
+    return res.status(200).json({
+      success: true,
+      message: `Successfully cleared all ${result.deletedCount} grievance complaints.`,
+      deletedCount: result.deletedCount,
+    });
+  } catch (error) {
+    console.error("Clear Complaints Error:", error);
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
+
 module.exports = {
   createComplaint,
   getMyComplaints,
@@ -398,4 +455,5 @@ module.exports = {
   assignComplaint,
   updateComplaintStatus,
   submitFeedback,
+  clearAllComplaints,
 };

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import API, { formatImageUrl } from "../../services/api";
+import API, { formatImageUrl, getCategoryFallbackImage } from "../../services/api";
 import DashboardLayout from "../../layouts/DashboardLayout";
 import { useLanguage } from "../../context/LanguageContext";
 import { useParams, Link } from "react-router-dom";
@@ -161,7 +161,8 @@ export default function ComplaintDetail() {
   const statusKey = (complaint.status || "Submitted").toLowerCase();
   const currentStageIndex = stageMap[statusKey] !== undefined ? stageMap[statusKey] : 2;
 
-  const defaultDefectImage = "https://images.unsplash.com/photo-1515162816999-a0c47dc192f7?w=800&q=80";
+  const defectCategory = complaint.aiCategory || complaint.citizenCategory || "Pothole / Road Damage";
+  const defaultDefectImage = getCategoryFallbackImage(defectCategory);
 
   return (
     <DashboardLayout>
@@ -344,7 +345,7 @@ export default function ComplaintDetail() {
               </div>
               <div style={{ height: "180px", borderRadius: "6px", overflow: "hidden", border: "1px solid var(--border-subtle)" }}>
                 <img
-                  src={formatImageUrl(complaint.beforeImage || complaint.imageUrl || defaultDefectImage)}
+                  src={formatImageUrl(complaint.beforeImage || complaint.imageUrl, defectCategory)}
                   alt="Before Defect"
                   onError={(e) => {
                     e.currentTarget.src = defaultDefectImage;

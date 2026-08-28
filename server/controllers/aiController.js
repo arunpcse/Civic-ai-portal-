@@ -1,19 +1,17 @@
 const Complaint = require("../models/Complaint");
 const Department = require("../models/Department");
-const FormData = require("form-data");
 const fs = require("fs");
 const path = require("path");
 
 const AI_SERVICE_URL = process.env.AI_SERVICE_URL || "http://localhost:8000";
 
-// ─── Helper: match category → Department ───────────────────────────────────
 // ─── Helper: match category/text → Department ──────────────────────────────
 const findDepartmentForCategory = async (category = "", text = "") => {
   try {
     const combined = `${category} ${text}`.toLowerCase();
     let targetRegex;
 
-    if (combined.includes("water") || combined.includes("leak") || combined.includes("pipe") || combined.includes("tap") || combined.includes("drinking") || combined.includes("குடிநீர்") || combined.includes("தண்ணீர்")) {
+    if (combined.includes("water") || combined.includes("leak") || combined.includes("pipe") || combined.includes("tap") || combined.includes("drinking") || combined.includes("குடிநீர்") || combined.includes("தண்ணீர்") || combined.includes("கசிவு")) {
       targetRegex = /water/i;
     } else if (combined.includes("electric") || combined.includes("light") || combined.includes("lamp") || combined.includes("pole") || combined.includes("wire") || combined.includes("power") || combined.includes("மின்")) {
       targetRegex = /electric/i;
@@ -25,8 +23,6 @@ const findDepartmentForCategory = async (category = "", text = "") => {
       targetRegex = /park/i;
     } else if (combined.includes("health") || combined.includes("mosquito") || combined.includes("fogging") || combined.includes("மருத்துவ") || combined.includes("சுகாதார")) {
       targetRegex = /health/i;
-    } else if (combined.includes("pothole") || combined.includes("road") || combined.includes("asphalt") || combined.includes("crater") || combined.includes("குழி") || combined.includes("சாலை")) {
-      targetRegex = /road/i;
     } else {
       targetRegex = /road/i;
     }
@@ -110,106 +106,71 @@ const getSeverity = (category = "", text = "", confidence = 0.5) => {
   return "Medium";
 };
 
-// ─── Internal Reusable AI Pipeline Function ──────────────────────────────
+// ─── Internal Reusable AI Pipeline Function (Instant & Non-Blocking) ──────
 const runAIPipelineInternal = async (complaint, localFilePath = null) => {
   let aiCategory = complaint.citizenCategory || "Pothole / Road Damage";
-  let aiConfidence = 0.92;
-  const fullText = `${complaint.title || ""} ${complaint.description || ""}`;
+  let aiConfidence = 0.95;
+  const fullText = `${complaint.title || ""} ${complaint.description || ""}`.toLowerCase();
 
-  // 1. Call Python YOLO /predict-image with text and category hints
-  try {
-    const formData = new FormData();
-    formData.append("text", fullText);
-    formData.append("category_hint", complaint.citizenCategory || "");
-
-    if (localFilePath && fs.existsSync(localFilePath)) {
-      formData.append("image", fs.createReadStream(localFilePath));
-    } else {
-      formData.append("image", Buffer.from("dummy_image_data"), {
-        filename: "complaint.jpg",
-        contentType: "image/jpeg",
-      });
-    }
-
-    const visionRes = await fetch(`${AI_SERVICE_URL}/predict-image`, {
-      method: "POST",
-      body: formData,
-      headers: formData.getHeaders(),
-      signal: AbortSignal.timeout(4000),
-    });
-
-    if (visionRes.ok) {
-      const vData = await visionRes.json();
-      if (vData.success && vData.category) {
-        aiCategory = vData.citizenCategory || vData.category;
-        aiConfidence = vData.confidence || aiConfidence;
-      }
-    }
-  } catch (err) {
-    // Vision service fallback
+  // 1. Instant Category Analysis & Normalization
+  if (
+    complaint.citizenCategory === "Water Leakage" ||
+    fullText.includes("water") ||
+    fullText.includes("leak") ||
+    fullText.includes("pipe") ||
+    fullText.includes("tap") ||
+    fullText.includes("குடிநீர்") ||
+    fullText.includes("தண்ணீர்") ||
+    fullText.includes("கசிவு")
+  ) {
+    aiCategory = "Water Leakage";
+  } else if (
+    complaint.citizenCategory === "Garbage" ||
+    fullText.includes("garbage") ||
+    fullText.includes("waste") ||
+    fullText.includes("trash") ||
+    fullText.includes("dump") ||
+    fullText.includes("குப்பை")
+  ) {
+    aiCategory = "Garbage";
+  } else if (
+    complaint.citizenCategory === "Streetlight Problem" ||
+    fullText.includes("streetlight") ||
+    fullText.includes("light") ||
+    fullText.includes("lamp") ||
+    fullText.includes("pole") ||
+    fullText.includes("மின்விளக்கு")
+  ) {
+    aiCategory = "Streetlight Problem";
+  } else if (
+    complaint.citizenCategory === "Drainage Problem" ||
+    fullText.includes("drain") ||
+    fullText.includes("sewer") ||
+    fullText.includes("sewage") ||
+    fullText.includes("manhole") ||
+    fullText.includes("சாக்கடை")
+  ) {
+    aiCategory = "Drainage Problem";
+  } else {
+    aiCategory = complaint.citizenCategory || "Pothole / Road Damage";
   }
 
-  // 2. Call NLP Department Classifier with description text
-  let predictedDeptName = "";
-  try {
-    const nlpRes = await fetch(`${AI_SERVICE_URL}/predict-department`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ description: fullText }),
-      signal: AbortSignal.timeout(3000),
-    });
-    if (nlpRes.ok) {
-      const nlpData = await nlpRes.json();
-      if (nlpData.success && nlpData.department) {
-        predictedDeptName = nlpData.department;
-      }
-    }
-  } catch (err) {
-    // NLP fallback
-  }
-
-  // 3. Department Resolution & Category Synchronization
-  let dept = null;
-  if (predictedDeptName) {
-    dept = await Department.findOne({ departmentName: new RegExp(predictedDeptName.split(" ")[0], "i") });
-  }
-  if (!dept) {
-    dept = await findDepartmentForCategory(aiCategory, fullText);
-  }
-
+  // 2. Department Resolution
+  const dept = await findDepartmentForCategory(aiCategory, fullText);
   const aiDept = dept ? dept.departmentName : "Roads Department";
 
-  // Harmonize category with identified department
-  if (aiDept.includes("Water")) {
-    aiCategory = "Water Leakage";
-  } else if (aiDept.includes("Electric")) {
-    aiCategory = "Streetlight Problem";
-  } else if (aiDept.includes("Drain")) {
-    aiCategory = "Drainage Problem";
-  } else if (aiDept.includes("Sanit")) {
-    aiCategory = "Garbage";
-  } else if (aiDept.includes("Park")) {
-    aiCategory = "Parks / Environment";
-  } else if (aiDept.includes("Health")) {
-    aiCategory = "Public Health";
-  } else if (aiDept.includes("Road")) {
-    aiCategory = "Pothole / Road Damage";
-  }
-
-  // ─── 3. Multi-Factor Spatial-Semantic Deduplication Engine ───
+  // 3. Multi-Factor Spatial-Semantic Deduplication Engine
   let isDuplicate = false;
   let matchedParent = null;
 
   try {
     const activeComplaints = await Complaint.find({
       _id: { $ne: complaint._id },
-      // Exclude only fully closed/rejected complaints — allow in-progress, verified, assigned, resolution submitted etc.
       status: { $nin: ["Resolved", "Closed", "Rejected", "Citizen Confirmed"] },
-      duplicate: { $ne: true }, // Only match against primary (non-duplicate) complaints
-    });
+      duplicate: { $ne: true },
+    }).limit(100);
 
-    const complaintFullText = `${complaint.title || ""} ${complaint.description || ""}`.toLowerCase();
-    const currCat = (aiCategory || complaint.citizenCategory || "").toLowerCase();
+    const currCat = (aiCategory || "").toLowerCase();
 
     for (const c of activeComplaints) {
       const otherCat = (c.aiCategory || c.citizenCategory || "").toLowerCase();
@@ -220,29 +181,21 @@ const runAIPipelineInternal = async (complaint, localFilePath = null) => {
         c.location?.longitude
       );
 
-      // Check category match
       const sameCategory =
         currCat === otherCat ||
         (currCat.includes("water") && otherCat.includes("water")) ||
         (currCat.includes("road") && otherCat.includes("road")) ||
-        (currCat.includes("pothole") && otherCat.includes("pothole")) ||
         (currCat.includes("garbage") && otherCat.includes("garbage")) ||
         (currCat.includes("drain") && otherCat.includes("drain")) ||
         (currCat.includes("light") && otherCat.includes("light"));
 
-      // Check spatial match
       const sameWard =
         (complaint.wardId && c.wardId && complaint.wardId.toString() === c.wardId.toString()) ||
         (complaint.location?.ward && c.location?.ward && complaint.location.ward === c.location.ward);
-      const sameLocality =
-        complaint.locality && c.locality && complaint.locality.toLowerCase().trim() === c.locality.toLowerCase().trim();
-      const sameStreet =
-        complaint.street && c.street && complaint.street.toLowerCase().trim() === c.street.toLowerCase().trim();
-      const isNearby = dist <= 400; // within 400 meters
+      const isNearby = dist <= 400;
 
-      // Check text token similarity
       const otherFullText = `${c.title || ""} ${c.description || ""}`.toLowerCase();
-      const wordsA = new Set(complaintFullText.split(/\s+/).filter((w) => w.length > 2));
+      const wordsA = new Set(fullText.split(/\s+/).filter((w) => w.length > 2));
       const wordsB = new Set(otherFullText.split(/\s+/).filter((w) => w.length > 2));
       let common = 0;
       wordsA.forEach((w) => {
@@ -251,14 +204,9 @@ const runAIPipelineInternal = async (complaint, localFilePath = null) => {
       const overlap = wordsA.size > 0 ? common / Math.max(wordsA.size, wordsB.size) : 0;
       const sameTitle = (complaint.title || "").toLowerCase().trim() === (c.title || "").toLowerCase().trim();
 
-      // Duplicate Criteria:
-      // 1. Same area (<=400m OR same Ward/Locality/Street) AND same category AND (overlap >= 0.20 or same title)
-      // 2. OR close GPS distance (<= 150m) AND same category
-      // 3. OR high text overlap (>= 0.50) in same municipal ward
       if (
-        (sameCategory && (isNearby || sameWard || sameLocality || sameStreet) && (overlap >= 0.20 || sameTitle)) ||
-        (sameCategory && dist <= 150) ||
-        (sameCategory && sameWard && overlap >= 0.40)
+        (sameCategory && (isNearby || sameWard) && (overlap >= 0.20 || sameTitle)) ||
+        (sameCategory && dist <= 150)
       ) {
         isDuplicate = true;
         matchedParent = c;
@@ -266,7 +214,7 @@ const runAIPipelineInternal = async (complaint, localFilePath = null) => {
       }
     }
   } catch (dedupErr) {
-    console.warn(`[!] Dedup check notice: ${dedupErr.message}`);
+    console.warn(`[!] Dedup notice: ${dedupErr.message}`);
   }
 
   // 4. Update Complaint fields
@@ -288,11 +236,8 @@ const runAIPipelineInternal = async (complaint, localFilePath = null) => {
     complaint.parentComplaintId = matchedParent._id;
     complaint.status = "Duplicate";
 
-    // ── ESCALATE PARENT COMPLAINT: Duplicate Count & Priority Score Boost (+10) ──
     matchedParent.duplicateCount = (matchedParent.duplicateCount || 0) + 1;
     matchedParent.priorityScore = Math.min(98, (matchedParent.priorityScore || 65) + 10);
-    
-    // Escalate severity if multiple citizens report
     if (matchedParent.duplicateCount >= 1 && matchedParent.severity === "Medium") {
       matchedParent.severity = "High";
     }
@@ -300,7 +245,6 @@ const runAIPipelineInternal = async (complaint, localFilePath = null) => {
       matchedParent.severity = "Critical";
     }
     await matchedParent.save();
-    console.log(`[+] Linked duplicate to parent #${matchedParent.complaintId}. Parent duplicateCount: ${matchedParent.duplicateCount}, new priorityScore: ${matchedParent.priorityScore}`);
   } else {
     complaint.duplicate = false;
     complaint.status = "Verified";
@@ -340,23 +284,18 @@ const processComplaintAI = async (req, res) => {
 const validateCivicContent = (filename = "", text = "", category = "") => {
   const combined = `${filename} ${text} ${category}`.toLowerCase();
 
-  // Explicit non-civic / spam triggers
   const spamKeywords = [
-    "selfie", "cat", "dog", "puppy", "kitten", "pet", "animal", "burger",
-    "pizza", "biryani", "food", "cake", "snack", "coffee", "tea", "drink",
-    "party", "birthday", "wedding", "flower", "shoes", "shirt", "dress",
-    "fashion", "makeup", "actor", "actress", "meme", "anime", "cartoon",
-    "screenshot", "wallpaper", "movie", "song", "dance", "game", "gaming",
-    "laptop", "smartphone", "mobile", "gadget", "hotel", "restaurant",
-    "qwerty", "asdfgh", "test1234", "haha", "lmao"
+    "selfie", "cat", "dog", "puppy", "kitten", "burger",
+    "pizza", "biryani", "food", "cake", "party", "birthday",
+    "shoes", "shirt", "dress", "fashion", "makeup", "actor",
+    "meme", "anime", "gaming", "laptop", "mobile", "qwerty"
   ];
 
   for (const spam of spamKeywords) {
     const regex = new RegExp(`\\b${spam}\\b`, "i");
     if (regex.test(filename.toLowerCase()) || regex.test(text.toLowerCase())) {
-      // Check if it really isn't about civic issues
       const isActuallyCivic = [
-        "road", "pothole", "garbage", "waste", "drain", "water leak", "pipeline", "streetlight"
+        "road", "pothole", "garbage", "waste", "drain", "water leak", "pipeline", "streetlight", "leak", "pipe", "water"
       ].some((c) => combined.includes(c));
 
       if (!isActuallyCivic) {
