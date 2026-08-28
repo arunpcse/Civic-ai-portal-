@@ -1,3 +1,4 @@
+const mongoose = require("mongoose");
 const Complaint = require("../models/Complaint");
 const User = require("../models/User");
 const Department = require("../models/Department");
@@ -5,6 +6,12 @@ const { Corporation, Zone, Ward, Locality, Street } = require("../models/Locatio
 const { runAIPipelineInternal, validateCivicContent } = require("./aiController");
 const path = require("path");
 const fs = require("fs");
+
+// Helper to safely convert string to valid MongoDB ObjectId or null
+const toValidObjectId = (val) => {
+  if (!val || val === "null" || val === "undefined" || val === "") return null;
+  return mongoose.Types.ObjectId.isValid(val) ? val : null;
+};
 
 // Helper to generate unique complaintId: GRV-2026-XXXXX
 const generateComplaintId = () => {
@@ -121,9 +128,9 @@ const createComplaint = async (req, res) => {
       originalDescription: description,
       imageUrl,
       beforeImage: imageUrl,
-      corporationId: corporationId || null,
-      zoneId: zoneId || null,
-      wardId: wardId || null,
+      corporationId: toValidObjectId(corporationId),
+      zoneId: toValidObjectId(zoneId),
+      wardId: toValidObjectId(wardId),
       locality: locality || "",
       street: street || "",
       specificLocation: specificLocation || "",
@@ -141,15 +148,17 @@ const createComplaint = async (req, res) => {
     const localFilePath = req.file ? req.file.path : null;
     await runAIPipelineInternal(complaint, localFilePath);
 
-    // Populate citizen, department, staff, and location hierarchy fields
-    await complaint.populate([
+    // Populate citizen, department, staff, and location hierarchy fields safely
+    const populateFields = [
       { path: "citizenId", select: "name email phone" },
       { path: "assignedDepartment", select: "departmentName contactEmail" },
       { path: "assignedStaff", select: "name email phone" },
-      { path: "corporationId", select: "name code district state" },
-      { path: "zoneId", select: "name zoneNumber code" },
-      { path: "wardId", select: "wardName wardNumber" },
-    ]);
+    ];
+    if (complaint.corporationId) populateFields.push({ path: "corporationId", select: "name code district state" });
+    if (complaint.zoneId) populateFields.push({ path: "zoneId", select: "name zoneNumber code" });
+    if (complaint.wardId) populateFields.push({ path: "wardId", select: "wardName wardNumber" });
+
+    await complaint.populate(populateFields);
 
     res.status(201).json({
       success: true,
