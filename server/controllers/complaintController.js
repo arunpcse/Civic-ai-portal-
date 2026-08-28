@@ -166,10 +166,16 @@ const createComplaint = async (req, res) => {
       complaint,
     });
   } catch (error) {
-    console.error("Create Complaint Error:", error);
+    console.error("Create Complaint Error Type:", error.name);
+    console.error("Create Complaint Error Message:", error.message);
+    console.error("Create Complaint Error Stack:", error.stack);
+    // Return descriptive message including field that caused the issue
+    const userMsg = error.name === "ValidationError"
+      ? `Validation failed: ${Object.values(error.errors || {}).map(e => e.message).join("; ")}`
+      : error.message || "Failed to submit complaint.";
     res.status(500).json({
       success: false,
-      message: error.message || "Failed to submit complaint.",
+      message: userMsg,
     });
   }
 };

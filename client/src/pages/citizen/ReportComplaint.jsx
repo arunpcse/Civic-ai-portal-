@@ -159,6 +159,10 @@ export default function ReportComplaint() {
 
   // 1. Initial Load of Corporations
   useEffect(() => {
+    // Clear any lingering error from previous submission attempts on page entry
+    setSubmissionError("");
+    setRegisteredComplaint(null);
+    
     const fetchCorporations = async () => {
       try {
         const res = await API.get("/locations/corporations");
@@ -664,16 +668,31 @@ export default function ReportComplaint() {
                 marginBottom: "20px",
                 display: "flex",
                 alignItems: "flex-start",
+                justifyContent: "space-between",
                 gap: "10px",
               }}
             >
-              <AlertTriangle size={20} color="#dc2626" style={{ flexShrink: 0, marginTop: "2px" }} />
-              <div>
-                <div style={{ fontWeight: "700", marginBottom: "3px" }}>AI Municipal Inspection Notice</div>
-                <div style={{ lineHeight: "1.4" }}>{submissionError}</div>
+              <div style={{ display: "flex", alignItems: "flex-start", gap: "10px" }}>
+                <AlertTriangle size={20} color="#dc2626" style={{ flexShrink: 0, marginTop: "2px" }} />
+                <div>
+                  <div style={{ fontWeight: "700", marginBottom: "3px" }}>AI Municipal Inspection Notice</div>
+                  <div style={{ lineHeight: "1.4" }}>{submissionError}</div>
+                  <div style={{ marginTop: "6px", fontSize: "0.78rem", color: "#b91c1c" }}>
+                    Please correct the issue above and click <strong>"Submit Grievance"</strong> to try again.
+                  </div>
+                </div>
               </div>
+              <button
+                type="button"
+                onClick={() => setSubmissionError("")}
+                style={{ background: "none", border: "none", cursor: "pointer", color: "#dc2626", flexShrink: 0, padding: "0 4px" }}
+                title="Dismiss"
+              >
+                ✕
+              </button>
             </div>
           )}
+
           
           {/* Section 1: Category Selection Grid */}
           <div style={{ marginBottom: "22px" }}>
